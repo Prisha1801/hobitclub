@@ -38,4 +38,8 @@ Route::middleware([
         Route::delete('admins/{id}', [AdminUserController::class, 'destroy']);
     });
 
+    //Services
+    Route::apiResource('service-categories', ServiceCategoryController::class);
+    Route::apiResource('services', ServiceController::class);
+
 });
