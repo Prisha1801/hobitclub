@@ -61,6 +61,7 @@ class AuthController extends Controller
         ]);
     }
 
+    // P
     /**
      * LOGOUT FROM ALL DEVICES
      */
