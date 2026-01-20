@@ -11,9 +11,20 @@ use App\Http\Controllers\Location\CityController;
 use App\Http\Controllers\Location\ZoneController;
 use App\Http\Controllers\Location\ServiceableAreaController;
 use App\Http\Controllers\LiveTracking\LiveTrackingController;
+use App\Http\Controllers\Webhooks\WhatsappBookingWebhookController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AdminBookingController;
+
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::post('/admin/bookings/{booking}/approve-payment', [AdminBookingController::class, 'approvePayment']);
+    Route::post('/admin/bookings/{booking}/reject-payment', [AdminBookingController::class, 'rejectPayment']);
+});
 
 Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+// Route::post('/webhooks/whatsapp/booking', [WhatsappBookingWebhookController::class, 'handle']);
+Route::post('/webhooks/whatsapp/booking', [WhatsappBookingWebhookController::class, 'handle'])
+    ->middleware('throttle:30,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
