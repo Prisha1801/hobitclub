@@ -8,6 +8,32 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Webhooks\WhatsappBookingWebhookController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminBookingController;
+use App\Http\Controllers\Api\Worker\WorkerAuthController;
+use App\Http\Controllers\Api\Worker\WorkerProfileController;
+use App\Http\Controllers\Api\Admin\AdminWorkerController;
+
+/*
+|--------------------------------------------------------------------------
+| Worker APIs
+|--------------------------------------------------------------------------
+*/
+Route::post('/worker/register', [WorkerAuthController::class, 'register']);
+
+Route::middleware(['auth:sanctum', 'role:worker'])->group(function () {
+    Route::get('/worker/me', [WorkerProfileController::class, 'me']);
+    Route::post('/worker/profile/update', [WorkerProfileController::class, 'update']);
+    Route::post('/worker/kyc/upload', [WorkerProfileController::class, 'uploadKyc']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin APIs
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::post('/admin/workers/{worker}/approve-kyc', [AdminWorkerController::class, 'approveKyc']);
+    Route::post('/admin/workers/{worker}/reject-kyc', [AdminWorkerController::class, 'rejectKyc']);
+});
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/admin/bookings/{booking}/approve-payment', [AdminBookingController::class, 'approvePayment']);
