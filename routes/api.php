@@ -5,6 +5,12 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Admin\ServiceCategoryController;
+use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Location\CityController;
+use App\Http\Controllers\Location\ZoneController;
+use App\Http\Controllers\Location\ServiceableAreaController;
+use App\Http\Controllers\LiveTracking\LiveTrackingController;
 
 Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -42,4 +48,11 @@ Route::middleware([
     Route::apiResource('service-categories', ServiceCategoryController::class);
     Route::apiResource('services', ServiceController::class);
 
+    //location
+    Route::apiResource('cities', CityController::class);
+    Route::apiResource('zones', ZoneController::class);
+    Route::apiResource('serviceable-areas', ServiceableAreaController::class);
+
+    //livetracking
+    Route::post('tracking/update', [LiveTrackingController::class, 'updateLocation']);
 });
