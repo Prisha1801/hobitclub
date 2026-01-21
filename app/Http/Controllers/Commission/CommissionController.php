@@ -10,18 +10,17 @@ class CommissionController extends Controller
 {
     public function index()
     {
-        return Commission::with('category')->get();
+        return Commission::with('service')->get();
     }
 
     public function store(Request $request)
     {
         return Commission::create(
             $request->validate([
-                'rule_code' => 'required|string|unique:category_commissions,rule_code',
-                'category_id' => 'required|exists:service_categories,id',
+                'service_id' => 'required|exists:service_categories,id',
                 'commission_type' => 'required|in:percentage,flat',
                 'value' => 'required|numeric',
-                'status' => 'boolean'
+                'status' => 'sometimes|in:active,inactive'
             ])
         );
     }
@@ -30,9 +29,9 @@ class CommissionController extends Controller
     {
         $commission->update(
             $request->validate([
-                'commission_type' => 'required|in:percentage,flat',
-                'value' => 'required|numeric',
-                'status' => 'boolean'
+                'commission_type' => 'sometimes|in:percentage,flat',
+                'value' => 'sometimes|numeric',
+                'status' => 'sometimes|in:active,inactive'
             ])
         );
 

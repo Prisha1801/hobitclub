@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Commission extends Model
 {
+    protected $table = 'category_commissions';
+
     protected $fillable = [
         'service_id',
         'commission_type',
