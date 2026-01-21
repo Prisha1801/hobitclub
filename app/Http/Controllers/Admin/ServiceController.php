@@ -4,53 +4,53 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Http\Requests\StoreServiceRequest;
-use App\Http\Requests\UpdateServiceRequest;
 use App\Models\Service;
 use Illuminate\Support\Str;
 
 class ServiceController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        return Service::with('category')->get();
+        return Service::with(['category','subscription'])->get();
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreServiceRequest $request)
+    public function store(Request $request)
     {
-        return Service::create($request->validated());
+        return Service::create($request->validate([
+            'category_id'       => 'required|exists:service_categories,id',
+            'name'              => 'required|string|max:255',
+            'description'       => 'nullable|string',
+            'duration_minutes'  => 'nullable|integer',
+            'price'             => 'required|numeric',
+            'festival_price'    => 'nullable|numeric',
+            'subscription_id'   => 'required|exists:subscription_type,id',
+            'status'            => 'boolean'
+        ]));
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show(Service $service)
     {
-        //
+        return $service->load(['category','subscription']);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateServiceRequest $request, $id)
+    public function update(Request $request, Service $service)
     {
-        $service = Service::findOrFail($id);
-        $service->update($request->validated());
-        return $service;
+        $service->update($request->validate([
+            'name'              => 'required|string|max:255',
+            'description'       => 'nullable|string',
+            'duration_minutes'  => 'nullable|integer',
+            'price'             => 'required|numeric',
+            'festival_price'    => 'nullable|numeric',
+            'subscription_id'   => 'required|exists:subscription_type,id',
+            'status'            => 'boolean'
+        ]));
+
+        return response()->json(['message' => 'Service updated']);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
+    public function destroy(Service $service)
     {
-        Service::findOrFail($id)->delete();
-        return response()->json(['message' => 'Deleted']);
+        $service->delete();
+        return response()->json(['message' => 'Service deleted']);
     }
 }

@@ -5,6 +5,12 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Admin\ServiceCategoryController;
+use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Location\CityController;
+use App\Http\Controllers\Location\ZoneController;
+use App\Http\Controllers\Location\ServiceableAreaController;
+use App\Http\Controllers\LiveTracking\LiveTrackingController;
 use App\Http\Controllers\Webhooks\WhatsappBookingWebhookController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminBookingController;
@@ -78,5 +84,14 @@ Route::middleware([
     //Services
     Route::apiResource('service-categories', ServiceCategoryController::class);
     Route::apiResource('services', ServiceController::class);
+    Route::apiResource('subscription-types', SubscriptionTypeController::class);
+    Route::apiResource('extra-time-fees', ExtraTimeFeeController::class);
 
+    //location
+    Route::apiResource('cities', CityController::class);
+    Route::apiResource('zones', ZoneController::class);
+    Route::apiResource('serviceable-areas', ServiceableAreaController::class);
+
+    //livetracking
+    Route::post('tracking/update', [LiveTrackingController::class, 'updateLocation']);
 });

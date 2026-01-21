@@ -11,18 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('services', function (Blueprint $table) {
+        Schema::create('zones', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('category_id')->constrained('service_categories')->cascadeOnDelete();
+            $table->foreignId('city_id')->constrained()->cascadeOnDelete();
             $table->string('name');
-            $table->text('description')->nullable();
-            $table->integer('duration_minutes')->nullable(); 
-            $table->decimal('price', 10, 2);
-            $table->decimal('festival_price', 10, 2)->nullable();
             $table->boolean('status')->default(true);
             $table->timestamps();
-            
-            $table->unique(['category_id']);
+
+            $table->unique(['city_id', 'name']);
         });
     }
 
@@ -31,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('services');
+        Schema::dropIfExists('zones');
     }
 };
