@@ -25,4 +25,14 @@ class Booking extends Model
     {
         return $this->belongsTo(User::class, 'worker_id');
     }
+
+    public function rating()
+    {
+        return $this->hasOne(BookingRating::class, 'booking_id');
+    }
+
+    public function assignedBy()
+    {
+        return $this->belongsTo(User::class, 'assigned_by');
+    }
 }
