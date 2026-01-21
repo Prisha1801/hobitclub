@@ -14,9 +14,11 @@ use App\Http\Controllers\LiveTracking\LiveTrackingController;
 use App\Http\Controllers\Webhooks\WhatsappBookingWebhookController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminBookingController;
-use App\Http\Controllers\Api\Worker\WorkerAuthController;
-use App\Http\Controllers\Api\Worker\WorkerProfileController;
-use App\Http\Controllers\Api\Admin\AdminWorkerController;
+use App\Http\Controllers\Worker\WorkerAuthController;
+use App\Http\Controllers\Worker\WorkerProfileController;
+use App\Http\Controllers\Admin\AdminWorkerController;
+use App\Http\Controllers\Admin\SubscriptionTypeController;
+use App\Http\Controllers\Admin\ExtraTimeFeeController;
 
 /*
 |--------------------------------------------------------------------------

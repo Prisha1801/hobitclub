@@ -17,7 +17,7 @@ class ServiceController extends Controller
     public function store(Request $request)
     {
         return Service::create($request->validate([
-            'category_id'       => 'required|exists:service_categories,id',
+            'category_id'       => 'required',
             'name'              => 'required|string|max:255',
             'description'       => 'nullable|string',
             'duration_minutes'  => 'nullable|integer',
