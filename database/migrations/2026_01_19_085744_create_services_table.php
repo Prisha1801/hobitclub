@@ -21,8 +21,6 @@ return new class extends Migration
             $table->decimal('festival_price', 10, 2)->nullable();
             $table->boolean('status')->default(true);
             $table->timestamps();
-            
-            $table->unique(['category_id']);
         });
     }
 
