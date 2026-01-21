@@ -58,6 +58,8 @@ Route::middleware([
     //Services
     Route::apiResource('service-categories', ServiceCategoryController::class);
     Route::apiResource('services', ServiceController::class);
+    Route::apiResource('subscription-types', SubscriptionTypeController::class);
+    Route::apiResource('extra-time-fees', ExtraTimeFeeController::class);
 
     //location
     Route::apiResource('cities', CityController::class);

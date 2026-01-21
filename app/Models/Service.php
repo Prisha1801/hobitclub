@@ -10,11 +10,10 @@ class Service extends Model
         'category_id',
         'name',
         'description',
-        'base_price',
-        'discount_price',
         'duration_minutes',
-        'commission_type',
-        'commission_value',
+        'price',
+        'festival_price',
+        'subscription_id',
         'status'
     ];
 
@@ -22,4 +21,15 @@ class Service extends Model
     {
         return $this->belongsTo(ServiceCategory::class, 'category_id');
     }
+
+    public function subscription()
+    {
+        return $this->belongsTo(SubscriptionType::class, 'subscription_id');
+    }
+
+    public function extraTimeFees()
+    {
+        return $this->hasMany(ExtraTimeFee::class);
+    }
+    
 }

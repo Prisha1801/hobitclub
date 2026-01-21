@@ -10,61 +10,43 @@ use Illuminate\Support\Str;
 
 class ServiceCategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         return ServiceCategory::withCount('services')->get();
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreServiceCategoryRequest $request)
+    public function store(Request $request)
     {
-        return ServiceCategory::create([
-            'name' => $request->name,
-            'slug' => Str::slug($request->name),
-            'icon' => $request->icon,
-            'description' => $request->description,
-            'status' => $request->status ?? true,
-        ]);
+        return ServiceCategory::create($request->validate([
+            'name'        => 'required|string|max:255',
+            'slug'        => 'required|string|unique:service_categories,slug',
+            'icon'        => 'nullable|string',
+            'description' => 'nullable|string',
+            'status'      => 'required|boolean'
+        ]));
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show(ServiceCategory $serviceCategory)
     {
-        $category = ServiceCategory::findOrFail($id);
-        return $category;
+        return $serviceCategory->load('services');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(StoreServiceCategoryRequest $request, $id)
+    public function update(Request $request, ServiceCategory $serviceCategory)
     {
-        $category = ServiceCategory::findOrFail($id);
-        $category->update($request->validated());
-        return $category;
+        $serviceCategory->update($request->validate([
+            'name'        => 'required|string|max:255',
+            'slug'        => 'required|string|unique:service_categories,slug,' . $serviceCategory->id,
+            'icon'        => 'nullable|string',
+            'description' => 'nullable|string',
+            'status'      => 'required|boolean'
+        ]));
+
+        return response()->json(['message' => 'Category updated']);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
+    public function destroy(ServiceCategory $serviceCategory)
     {
-        $category = ServiceCategory::withCount('services')->findOrFail($id);
-
-        if ($category->services_count > 0) {
-            return response()->json([
-                'message' => 'Cannot delete category with services'
-            ], 422);
-        }
-
-        $category->delete();
-        return response()->json(['message' => 'Deleted']);
+        $serviceCategory->delete();
+        return response()->json(['message' => 'Category deleted']);
     }
 }

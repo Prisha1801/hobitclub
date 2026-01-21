@@ -13,21 +13,16 @@ return new class extends Migration
     {
         Schema::create('services', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('category_id')
-                ->constrained('service_categories')
-                ->cascadeOnDelete();
-
+            $table->foreignId('category_id')->constrained('service_categories')->cascadeOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->decimal('base_price', 10, 2);
-            $table->decimal('discount_price', 10, 2)->nullable();
-            $table->integer('duration_minutes')->nullable();
-            $table->enum('commission_type', ['flat', 'percentage']);
-            $table->decimal('commission_value', 6, 2);
+            $table->integer('duration_minutes')->nullable(); 
+            $table->decimal('price', 10, 2);
+            $table->decimal('festival_price', 10, 2)->nullable();
             $table->boolean('status')->default(true);
             $table->timestamps();
             
-            $table->unique(['category_id', 'name']);
+            $table->unique(['category_id']);
         });
     }
 
