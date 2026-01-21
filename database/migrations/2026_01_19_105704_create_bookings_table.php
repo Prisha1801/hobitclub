@@ -57,3 +57,13 @@ return new class extends Migration
         Schema::dropIfExists('bookings');
     }
 };
+
+
+// $table->foreignId('customer_id')->constrained('users')->cascadeOnDelete();
+// $table->foreignId('worker_id')->constrained('users')->cascadeOnDelete();
+// $table->foreignId('service_id')->constrained('services')->cascadeOnDelete();
+// $table->timestamp('date_time')->nullable();
+// $table->timestamp('location')->constrained('zones');
+// $table->enum('status', ['pending','cancled','approved','rejected','completed','assigned'])->default('pending');
+// $table->string('amount')->nullable();
+// $table->enum('amount_status', ['pending','cancled','completed','refunded'])->default('pending');

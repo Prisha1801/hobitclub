@@ -19,7 +19,7 @@ use App\Http\Controllers\Worker\WorkerProfileController;
 use App\Http\Controllers\Admin\AdminWorkerController;
 use App\Http\Controllers\Admin\SubscriptionTypeController;
 use App\Http\Controllers\Admin\ExtraTimeFeeController;
-
+use     App\Http\Controllers\Dashboard\DashBoardController;
 /*
 |--------------------------------------------------------------------------
 | Worker APIs
@@ -96,4 +96,18 @@ Route::middleware([
 
     //livetracking
     Route::post('tracking/update', [LiveTrackingController::class, 'updateLocation']);
+
+    //assign booking
+    Route::post('/assign-booking', [BookingAssignmentController::class, 'assign']);
+
+    //Commission
+    Route::apiResource('commissions', CommissionController::class);
+});
+
+//Booking Ratings
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/booking-ratings', [BookingRatingController::class, 'store']);
+
+    //Dashboard
+    Route::get('/overview', [DashBoardController::class, 'overview']);
 });

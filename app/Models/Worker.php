@@ -88,4 +88,19 @@ class Worker extends Model
             && $this->user->is_active
             && $this->user->is_phone_verified;
     }
+
+    public function ratings()
+    {
+        return $this->hasMany(BookingRating::class);
+    }
+
+    public function averageRating()
+    {
+        return round($this->ratings()->avg('rating'), 1);
+    }
+
+    public function ratingsCount()
+    {
+        return $this->ratings()->count();
+    }
 }
