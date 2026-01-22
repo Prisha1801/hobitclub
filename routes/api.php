@@ -19,7 +19,11 @@ use App\Http\Controllers\Worker\WorkerProfileController;
 use App\Http\Controllers\Admin\AdminWorkerController;
 use App\Http\Controllers\Admin\SubscriptionTypeController;
 use App\Http\Controllers\Admin\ExtraTimeFeeController;
-use     App\Http\Controllers\Dashboard\DashBoardController;
+use App\Http\Controllers\Dashboard\DashBoardController;
+use App\Http\Controllers\Commission\CommissionController;
+use App\Http\Controllers\Booking\BookingAssignmentController;
+use App\Http\Controllers\Booking\BookingRatingController;
+
 /*
 |--------------------------------------------------------------------------
 | Worker APIs

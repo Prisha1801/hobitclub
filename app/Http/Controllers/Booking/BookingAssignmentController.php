@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Booking;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Booking;
-use App\Models\Worker;
+use App\Models\ Worker;
 
 class BookingAssignmentController extends Controller
 {

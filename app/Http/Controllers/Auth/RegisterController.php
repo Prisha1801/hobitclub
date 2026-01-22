@@ -26,7 +26,8 @@ class RegisterController extends Controller
                     'coordinator',
                     'operation_head',
                     'worker',
-                    'customer'
+                    'customer',
+                    'staff'
                 ])
             ],
         ]);

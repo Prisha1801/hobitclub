@@ -24,6 +24,7 @@ return new class extends Migration
                 'operation_head',
                 'worker',
                 'customer',
+                'staff',
             ])->default('customer');
 
             $table->boolean('is_active')->default(true);
