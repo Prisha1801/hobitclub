@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('category_commissions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('service_id')->constrained('services')->cascadeOnDelete();
-            $table->enum('commission_type', ['percentage','flat']);
+            $table->enum('commission_type', ['percentage','fixed']);
             $table->decimal('value', 10, 2);            // 15 or 200
             $table->enum('status',['active','inactive'])->default('active');
             $table->timestamps();
