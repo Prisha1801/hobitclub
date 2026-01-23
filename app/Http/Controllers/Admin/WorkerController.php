@@ -11,8 +11,13 @@ class WorkerController extends Controller
     public function index()
     {
         return User::where('role', 'worker')
-            ->with('worker')
-            ->with('worker_availablillity')
+            ->with('worker',
+                'worker_availablillity',
+                'category:id,name',
+                'service:id,name',
+                'city:id,name',
+                'zone:id,name',
+                'area:id,name')
             ->latest()
             ->paginate(20);
     }

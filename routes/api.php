@@ -24,17 +24,11 @@ use App\Http\Controllers\Worker\WorkerAuthController;
 use App\Http\Controllers\Worker\WorkerProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\BookingController;
-
-// Route::get('/services', [BookingController::class, 'services']);
-Route::post('/booking/slots', [BookingController::class, 'slots']);
-// Route::post('/bookings', [BookingController::class, 'store']);
-// Route::post('/api/bookings', [BookingController::class, 'BookingStore']);
-Route::get('/bookings/{id}', [BookingController::class, 'show']);
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminBookingController;
 use App\Http\Controllers\Api\Worker\WorkerAuthController;
-use App\Http\Controllers\Worker\WorkerProfileController;
-use App\Http\Controllers\Admin\AdminWorkerController;
+use App\Http\Controllers\Api\Worker\WorkerProfileController;
+use App\Http\Controllers\Api\Admin\AdminWorkerController;
 use App\Http\Controllers\Admin\SubscriptionTypeController;
 use App\Http\Controllers\Admin\ExtraTimeFeeController;
 use App\Http\Controllers\Dashboard\DashBoardController;
@@ -46,6 +40,11 @@ use App\Http\Controllers\Booking\BookingApprovalController;
 Route::prefix('bot')->group(function () {
     Route::get('/services', [BookingController::class, 'services']);
     Route::post('/bookings', [BookingController::class, 'bookingStore']);
+    // Route::get('/services', [BookingController::class, 'services']);
+    Route::post('/booking/slots', [BookingController::class, 'slots']);
+    // Route::post('/bookings', [BookingController::class, 'store']);
+    // Route::post('/api/bookings', [BookingController::class, 'BookingStore']);
+    Route::get('/bookings/{id}', [BookingController::class, 'show']);
 });
 /*
 |--------------------------------------------------------------------------
@@ -144,4 +143,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Dashboard
     Route::get('/overview', [DashBoardController::class, 'overview']);
+
+    //uploade kyc
+    Route::post('/worker/{user?}/docs',[WorkerProfileController::class, 'uploaddocs']);
 });

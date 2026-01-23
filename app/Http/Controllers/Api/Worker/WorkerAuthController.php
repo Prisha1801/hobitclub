@@ -19,6 +19,7 @@ class WorkerAuthController extends Controller
         
         $request->validate([
             'name'     => 'required|string',
+            'email'    => 'nullable|email|unique:users,email',
             'phone'    => 'required|string|unique:users,phone',
             'password' => 'required|min:6',
             'category_id' => 'nullable|exists:service_categories,id',
@@ -37,6 +38,7 @@ class WorkerAuthController extends Controller
         
         $user = User::create([
             'name'      => $request->name,
+            'email'     => $request->email,
             'phone'     => $request->phone,
             'password'  => Hash::make($request->password),
             'role'      => 'worker',
@@ -75,6 +77,7 @@ class WorkerAuthController extends Controller
     {
         $request->validate([
             'name'     => 'sometimes|required|string',
+            'email'    => 'sometimes|email|unique:users,email,'  . ($user?->id ?? auth()->id()), 
             'phone'    => 'sometimes|required|string|unique:users,phone,' . ($user?->id ?? auth()->id()),
             'password' => 'sometimes|nullable|min:6',
 
@@ -116,7 +119,7 @@ class WorkerAuthController extends Controller
         $userData = [];
 
         foreach ([
-            'name', 'phone',
+            'name', 'phone', 'email',
             'category_id', 'service_id',
             'city_id', 'zone_id', 'area_id'
         ] as $field) {
