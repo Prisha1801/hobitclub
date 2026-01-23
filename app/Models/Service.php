@@ -17,6 +17,7 @@ class Service extends Model
         'status'
     ];
 
+
     public function category()
     {
         return $this->belongsTo(ServiceCategory::class, 'category_id');

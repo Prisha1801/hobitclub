@@ -1,17 +1,35 @@
 <?php
 
-use App\Http\Controllers\Admin\WorkerController;
-use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\AdminBookingController;
 use App\Http\Controllers\Admin\AdminUserController;
-use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Admin\AdminWorkerController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\ExtraTimeFeeController;
 use App\Http\Controllers\Admin\ServiceCategoryController;
 use App\Http\Controllers\Admin\ServiceController;
-use App\Http\Controllers\Location\CityController;
-use App\Http\Controllers\Location\ZoneController;
-use App\Http\Controllers\Location\ServiceableAreaController;
+use App\Http\Controllers\Admin\SubscriptionTypeController;
+use App\Http\Controllers\Admin\WorkerController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Booking\BookingAssignmentController;
+use App\Http\Controllers\Booking\BookingRatingController;
+use App\Http\Controllers\Commission\CommissionController;
+use App\Http\Controllers\Dashboard\DashBoardController;
 use App\Http\Controllers\LiveTracking\LiveTrackingController;
+use App\Http\Controllers\Location\CityController;
+use App\Http\Controllers\Location\ServiceableAreaController;
+use App\Http\Controllers\Location\ZoneController;
 use App\Http\Controllers\Webhooks\WhatsappBookingWebhookController;
+use App\Http\Controllers\Worker\WorkerAuthController;
+use App\Http\Controllers\Worker\WorkerProfileController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\BookingController;
+
+// Route::get('/services', [BookingController::class, 'services']);
+Route::post('/booking/slots', [BookingController::class, 'slots']);
+// Route::post('/bookings', [BookingController::class, 'store']);
+// Route::post('/api/bookings', [BookingController::class, 'BookingStore']);
+Route::get('/bookings/{id}', [BookingController::class, 'show']);
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminBookingController;
 use App\Http\Controllers\Api\Worker\WorkerAuthController;
@@ -25,6 +43,10 @@ use App\Http\Controllers\Booking\BookingAssignmentController;
 use App\Http\Controllers\Booking\BookingRatingController;
 use App\Http\Controllers\Booking\BookingApprovalController;
 
+Route::prefix('bot')->group(function () {
+    Route::get('/services', [BookingController::class, 'services']);
+    Route::post('/bookings', [BookingController::class, 'bookingStore']);
+});
 /*
 |--------------------------------------------------------------------------
 | Worker APIs
@@ -61,11 +83,11 @@ Route::post('/webhooks/whatsapp/booking', [WhatsappBookingWebhookController::cla
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/logout-all', [AuthController::class, 'logoutAll']); 
+    Route::post('/logout-all', [AuthController::class, 'logoutAll']);
 });
 Route::middleware([
     'auth:sanctum',
-    'role:admin,coordinator,operation_head'
+    'role:admin,coordinator,operation_head',
 ])->prefix('admin')->group(function () {
 
     // WORKERS
