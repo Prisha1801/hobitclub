@@ -17,8 +17,8 @@ class CommissionController extends Controller
     {
         return Commission::create(
             $request->validate([
-                'service_id' => 'required|exists:service_categories,id',
-                'commission_type' => 'required|in:percentage,flat',
+                'service_id' => 'required|exists:services,id',
+                'commission_type' => 'required|in:percentage,fixed',
                 'value' => 'required|numeric',
                 'status' => 'sometimes|in:active,inactive'
             ])
@@ -29,7 +29,7 @@ class CommissionController extends Controller
     {
         $commission->update(
             $request->validate([
-                'commission_type' => 'sometimes|in:percentage,flat',
+                'commission_type' => 'sometimes|in:percentage,fixed',
                 'value' => 'sometimes|numeric',
                 'status' => 'sometimes|in:active,inactive'
             ])
