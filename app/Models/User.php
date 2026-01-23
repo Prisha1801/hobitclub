@@ -66,4 +66,9 @@ class User extends Authenticatable
         return $this->belongsTo(ServiceableArea::class, 'area_id');
     }
 
+    public function worker_availablillity()
+    {
+        return $this->hasMany(WorkerAvailability::class, 'worker_id');
+    }
+    
 }
