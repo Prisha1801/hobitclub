@@ -3,6 +3,8 @@ namespace App\Http\Controllers\Api\Worker;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\Worker;
 
 class WorkerProfileController extends Controller
 {
@@ -138,4 +140,62 @@ class WorkerProfileController extends Controller
         ]);
     }
 
+    public function uploaddocs(Request $request, Worker $worker = null)
+    {
+        if (auth()->user()->role === 'admin') {
+            $worker = $worker ?? abort(404);
+        } else {
+            $worker = auth()->user()->worker;
+        }
+
+        $request->validate([
+            'id_type'     => 'required|array|min:1',
+            'id_type.*'   => 'required|string',
+
+            'id_number'   => 'required|array|min:1',
+            'id_number.*' => 'required|string',
+
+            'id_front'    => 'required|array|min:1',
+            'id_front.*'  => 'required|image|mimes:jpg,jpeg,png|max:2048',
+
+            'id_back'     => 'nullable|array',
+            'id_back.*'   => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        $basePath = "uploads/workers/{$worker->id}";
+
+        $idTypes     = [];
+        $idNumbers   = [];
+        $frontPaths  = [];
+        $backPaths   = [];
+
+        foreach ($request->id_type as $index => $type) {
+
+            // Front image (mandatory)
+            $frontPaths[] = $request->file('id_front')[$index]
+                ->store($basePath, 'public');
+
+            // Back image (optional)
+            $backPaths[] = !empty($request->file('id_back')[$index])
+                ? $request->file('id_back')[$index]->store($basePath, 'public')
+                : null;
+
+            $idTypes[]   = $type;
+            $idNumbers[] = $request->id_number[$index];
+        }
+
+        $worker->update([
+            'id_type'        => $idTypes,
+            'id_number'      => $idNumbers,
+            'id_front_path'  => $frontPaths,
+            'id_back_path'   => $backPaths,
+            'kyc_status'     => 'pending',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'KYC documents updated successfully',
+            'count'   => count($idTypes),
+        ]);
+    }
 }

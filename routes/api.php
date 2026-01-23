@@ -15,8 +15,8 @@ use App\Http\Controllers\Webhooks\WhatsappBookingWebhookController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminBookingController;
 use App\Http\Controllers\Api\Worker\WorkerAuthController;
-use App\Http\Controllers\Worker\WorkerProfileController;
-use App\Http\Controllers\Admin\AdminWorkerController;
+use App\Http\Controllers\Api\Worker\WorkerProfileController;
+use App\Http\Controllers\Api\Admin\AdminWorkerController;
 use App\Http\Controllers\Admin\SubscriptionTypeController;
 use App\Http\Controllers\Admin\ExtraTimeFeeController;
 use App\Http\Controllers\Dashboard\DashBoardController;
@@ -122,4 +122,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //Dashboard
     Route::get('/overview', [DashBoardController::class, 'overview']);
+
+    //uploade kyc
+    Route::post('/worker/{user?}/docs',[WorkerProfileController::class, 'uploaddocs']);
 });
