@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\User;
 
 class WorkerController extends Controller
 {
@@ -11,6 +12,7 @@ class WorkerController extends Controller
     {
         return User::where('role', 'worker')
             ->with('worker')
+            ->with('worker_availablillity')
             ->latest()
             ->paginate(20);
     }

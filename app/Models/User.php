@@ -17,6 +17,11 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'category_id',
+        'service_id',
+        'city_id',
+        'zone_id',
+        'area_id',
         'is_active'
     ];
 
@@ -35,4 +40,35 @@ class User extends Authenticatable
     {
         return $this->hasOne(Customer::class);
     }
+
+    public function category()
+    {
+        return $this->belongsTo(ServiceCategory::class, 'category_id');
+    }
+
+    public function service()
+    {
+        return $this->belongsTo(Service::class, 'service_id');
+    }
+    
+    public function city()
+    {
+        return $this->belongsTo(City::class, 'city_id');
+    }
+    
+    public function zone()
+    {
+        return $this->belongsTo(Zone::class, 'zone_id');
+    }
+    
+    public function area()
+    {
+        return $this->belongsTo(ServiceableArea::class, 'area_id');
+    }
+
+    public function worker_availablillity()
+    {
+        return $this->hasMany(WorkerAvailability::class, 'worker_id');
+    }
+    
 }
