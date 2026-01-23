@@ -23,6 +23,7 @@ use App\Http\Controllers\Dashboard\DashBoardController;
 use App\Http\Controllers\Commission\CommissionController;
 use App\Http\Controllers\Booking\BookingAssignmentController;
 use App\Http\Controllers\Booking\BookingRatingController;
+use App\Http\Controllers\Booking\BookingApprovalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -106,6 +107,9 @@ Route::middleware([
 
     //Commission
     Route::apiResource('commissions', CommissionController::class);
+
+    //approve booking 
+    Route::post('/bookings/{booking}/approve', [BookingApprovalController::class, 'approve']);
 });
 
 //Booking Ratings
