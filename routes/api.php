@@ -110,6 +110,10 @@ Route::middleware([
 
     //approve booking 
     Route::post('/bookings/{booking}/approve', [BookingApprovalController::class, 'approve']);
+
+
+    Route::put('/worker/{user?}/update',[WorkerAuthController::class, 'update']);
+
 });
 
 //Booking Ratings
