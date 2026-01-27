@@ -17,16 +17,23 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'category_id',
-        'service_id',
+        'category_ids',
+        'service_ids',
         'city_id',
         'zone_id',
         'area_id',
-        'is_active'
+        'is_active',
+        'is_assigned'
     ];
 
     protected $hidden = [
         'password',
+    ];
+
+    protected $casts = [
+        'is_assigned' => 'boolean',
+        'category_ids' => 'array',
+        'service_ids'  => 'array',
     ];
 
     // WORKER RELATION

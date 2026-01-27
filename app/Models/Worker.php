@@ -42,6 +42,10 @@ class Worker extends Model
         'available_days' => 'array',
         'available_time' => 'array',
         'wallet_balance' => 'decimal:2',
+        'id_type'        => 'array',
+        'id_number'      => 'array',
+        'id_front_path'  => 'array',
+        'id_back_path'   => 'array',
     ];
 
     /**
