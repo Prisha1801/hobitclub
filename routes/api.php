@@ -80,6 +80,7 @@ Route::middleware([
 
     // WORKERS
     Route::get('workers', [WorkerController::class, 'index']);
+    Route::get('unassigned_worker', [WorkerController::class, 'unassigned_worker']);
     Route::post('workers', [WorkerController::class, 'store']);
     Route::get('workers/{id}', [WorkerController::class, 'show']);
     Route::patch('workers/{id}/status', [WorkerController::class, 'updateStatus']);

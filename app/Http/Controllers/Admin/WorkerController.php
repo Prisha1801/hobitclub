@@ -22,6 +22,24 @@ class WorkerController extends Controller
             ->paginate(20);
     }
 
+    public function unassigned_worker()
+    {
+        return User::where('role', 'worker')
+            ->with('worker',
+                'worker_availablillity',
+                'category:id,name',
+                'service:id,name',
+                'city:id,name',
+                'zone:id,name',
+                'area:id,name')
+            ->latest()
+            ->where(function ($q) {
+                $q->whereNull('is_assigned')
+                ->orWhere('is_assigned', false);
+            })
+            ->paginate(20);
+    }
+
     public function store(Request $request)
     {
         $request->validate([

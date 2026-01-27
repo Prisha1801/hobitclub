@@ -16,20 +16,24 @@ class BookingAssignmentController extends Controller
     {
         $data = $request->validate([
             'booking_id' => 'required|exists:bookings,id',
-            'worker_id'  => 'required|exists:workers,id'
+            'worker_id'  => 'required|exists:users,id'
         ]);
 
         $booking = Booking::where('id', $data['booking_id'])
             ->whereIn('status', ['pending','reassigned'])
             ->firstOrFail();
 
-        $worker = Worker::findOrFail($data['worker_id']);
+        $worker = User::findOrFail($data['worker_id']);
 
         $booking->update([
             'worker_id'  => $worker->id,
             'status'     => 'assigned',
             'assigned_by'=> auth()->id(),
             'assigned_at'=> now(),
+        ]);
+        
+        $worker->update([
+            'is_assigned' => true
         ]);
 
         // OPTIONAL: notify worker (WhatsApp / push)

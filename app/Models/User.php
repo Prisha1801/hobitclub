@@ -22,11 +22,16 @@ class User extends Authenticatable
         'city_id',
         'zone_id',
         'area_id',
-        'is_active'
+        'is_active',
+        'is_assigned'
     ];
 
     protected $hidden = [
         'password',
+    ];
+
+    protected $casts = [
+        'is_assigned' => 'boolean',
     ];
 
     // WORKER RELATION
