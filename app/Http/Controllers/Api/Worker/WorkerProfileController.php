@@ -5,6 +5,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Worker;
+use App\Models\Service;
+use App\Models\ServiceCategory;
 
 class WorkerProfileController extends Controller
 {
@@ -40,7 +42,13 @@ class WorkerProfileController extends Controller
      */
     public function me()
     {
-        $user = auth()->user()->load('worker');
+        $user = auth()->user()->load([
+            'worker',
+            'worker_availablillity',
+            'city:id,name',
+            'zone:id,name',
+            'area:id,name',
+        ]);
 
         if (! $user->worker) {
             return response()->json([
@@ -49,36 +57,75 @@ class WorkerProfileController extends Controller
             ], 404);
         }
 
+        $worker = $user->worker;
+
+        /* ----------------------------------------
+        Categories & Services (from users table)
+        ----------------------------------------- */
+        $categoryIds = $this->normalizeIds($user->category_ids);
+        $serviceIds  = $this->normalizeIds($user->service_ids);
+
+        $categories = empty($categoryIds)
+            ? []
+            : ServiceCategory::whereIn('id', $categoryIds)
+                ->select('id', 'name')
+                ->get()
+                ->toArray();
+
+        $services = empty($serviceIds)
+            ? []
+            : Service::whereIn('id', $serviceIds)
+                ->select('id', 'name')
+                ->get()
+                ->toArray();
+
+        /* ----------------------------------------
+        KYC Documents (formatted)
+        ----------------------------------------- */
+        $documents = [];
+
+        if (is_array($worker->id_type)) {
+            foreach ($worker->id_type as $index => $type) {
+                $documents[] = [
+                    'type' => $type,
+                    'number' => $worker->id_number[$index] ?? null,
+                    'front_url' => isset($worker->id_front_path[$index])
+                        ? asset('storage/' . $worker->id_front_path[$index])
+                        : null,
+                    'back_url' => isset($worker->id_back_path[$index])
+                        ? asset('storage/' . $worker->id_back_path[$index])
+                        : null,
+                ];
+            }
+        }
+
+        /* ----------------------------------------
+        FINAL RESPONSE (FLAT & FRONTEND READY)
+        ----------------------------------------- */
         return response()->json([
-            'id'               => $user->worker->id,
-            'user_id'          => $user->id,
+            'id'           => $user->id,
+            'worker_id'    => $worker->id,
 
-            // 👤 USER DATA
-            'name'             => $user->name,
-            'phone'            => $user->phone,
-            'email'            => $user->email,
+            'name'         => $user->name,
+            'email'        => $user->email,
+            'phone'        => $user->phone,
 
-            // 👷 WORKER DATA
-            'service_category' => $user->worker->service_category,
-            'wallet_balance'   => $user->worker->wallet_balance,
-            'kyc_status'       => $user->worker->kyc_status,
+            'is_active'    => $user->is_active,
+            'is_assigned'  => $user->is_assigned,
 
-            'id_type'          => $user->worker->id_type,
-            'id_number'        => $user->worker->id_number,
-            'id_front_url'     => $user->worker->id_front_path
-                ? asset('storage/' . $user->worker->id_front_path)
-                : null,
-            'id_back_url'      => $user->worker->id_back_path
-                ? asset('storage/' . $user->worker->id_back_path)
-                : null,
+            'categories'   => $categories,
+            'services'     => $services,
 
-            'skills'           => $user->worker->skills,
-            'preferred_area'   => $user->worker->preferred_area,
-            'available_days'   => $user->worker->available_days,
-            'available_time'   => $user->worker->available_time,
+            'city'         => $user->city,
+            'zone'         => $user->zone,
+            'area'         => $user->area,
 
-            'created_at'       => $user->worker->created_at,
-            'updated_at'       => $user->worker->updated_at,
+            'wallet_balance' => $worker->wallet_balance,
+            'kyc_status'     => $worker->kyc_status,
+
+            'documents'      => $documents,
+
+            'worker_availablillity' => $user->worker_availablillity,
         ]);
     }
 
@@ -140,14 +187,92 @@ class WorkerProfileController extends Controller
         ]);
     }
 
-    public function uploaddocs(Request $request, Worker $worker = null)
+    // public function uploaddocs(Request $request, User $user = null)
+    // {
+        
+    //     if (auth()->user()->role === 'admin') {
+    //         $worker = $user->worker;
+    //     } else {
+    //         $worker = auth()->user()->worker;
+    //     }
+    //     if (! $worker) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Worker profile not found',
+    //         ], 404);
+    //     }
+    //     $request->validate([
+    //         'id_type'     => 'required|array|min:1',
+    //         'id_type.*'   => 'required|string',
+
+    //         'id_number'   => 'required|array|min:1',
+    //         'id_number.*' => 'required|string',
+
+    //         'id_front'    => 'required|array|min:1',
+    //         'id_front.*'  => 'required|image|mimes:jpg,jpeg,png|max:2048',
+
+    //         'id_back'     => 'nullable|array',
+    //         'id_back.*'   => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+    //     ]);
+
+    //     $basePath = "uploads/workers/{$worker->id}";
+
+    //     $idTypes     = [];
+    //     $idNumbers   = [];
+    //     $frontPaths  = [];
+    //     $backPaths   = [];
+
+    //     foreach ($request->id_type as $index => $type) {
+
+    //         // Front image (mandatory)
+    //         $frontPaths[] = $request->file('id_front')[$index]
+    //             ->store($basePath, 'public');
+
+    //         // Back image (optional)
+    //         $backPaths[] = !empty($request->file('id_back')[$index])
+    //             ? $request->file('id_back')[$index]->store($basePath, 'public')
+    //             : null;
+
+    //         $idTypes[]   = $type;
+    //         $idNumbers[] = $request->id_number[$index];
+    //     }
+
+    //     $worker->update([
+    //         'id_type'        => $idTypes,
+    //         'id_number'      => $idNumbers,
+    //         'id_front_path'  => $frontPaths,
+    //         'id_back_path'   => $backPaths,
+    //         'kyc_status'     => 'pending',
+    //     ]);
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'KYC documents updated successfully',
+    //         'count'   => count($idTypes),
+    //     ]);
+    // }
+
+    public function uploaddocs(Request $request, User $user = null)
     {
+        /* ------------------------------------
+        Resolve worker (admin / worker)
+        ------------------------------------- */
         if (auth()->user()->role === 'admin') {
-            $worker = $worker ?? abort(404);
+            $worker = $user?->worker;
         } else {
             $worker = auth()->user()->worker;
         }
 
+        if (! $worker) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Worker profile not found',
+            ], 404);
+        }
+
+        /* ------------------------------------
+        Validation
+        ------------------------------------- */
         $request->validate([
             'id_type'     => 'required|array|min:1',
             'id_type.*'   => 'required|string',
@@ -162,40 +287,99 @@ class WorkerProfileController extends Controller
             'id_back.*'   => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        $basePath = "uploads/workers/{$worker->id}";
+        /* ------------------------------------
+        Public path (Hostinger safe)
+        public_html/storage/uploads/workers/{id}
+        ------------------------------------- */
+        $publicBasePath = public_path("storage/uploads/workers/{$worker->id}");
 
-        $idTypes     = [];
-        $idNumbers   = [];
-        $frontPaths  = [];
-        $backPaths   = [];
-
-        foreach ($request->id_type as $index => $type) {
-
-            // Front image (mandatory)
-            $frontPaths[] = $request->file('id_front')[$index]
-                ->store($basePath, 'public');
-
-            // Back image (optional)
-            $backPaths[] = !empty($request->file('id_back')[$index])
-                ? $request->file('id_back')[$index]->store($basePath, 'public')
-                : null;
-
-            $idTypes[]   = $type;
-            $idNumbers[] = $request->id_number[$index];
+        if (! file_exists($publicBasePath)) {
+            mkdir($publicBasePath, 0755, true);
         }
 
+        $idTypes    = [];
+        $idNumbers  = [];
+        $frontPaths = [];
+        $backPaths  = [];
+
+        /* ------------------------------------
+        Store documents
+        ------------------------------------- */
+        foreach ($request->id_type as $index => $type) {
+
+            $safeType  = str_replace(' ', '_', strtolower($type));
+            $timestamp = time();
+
+            /* -------- FRONT IMAGE (required) -------- */
+            $frontFile = $request->file('id_front')[$index];
+            $frontFileName = "{$safeType}_front_{$timestamp}_{$index}."
+                . $frontFile->getClientOriginalExtension();
+
+            $frontFile->move($publicBasePath, $frontFileName);
+
+            $frontRelativePath = "uploads/workers/{$worker->id}/{$frontFileName}";
+
+            /* -------- BACK IMAGE (optional) -------- */
+            $backRelativePath = null;
+
+            if (isset($request->file('id_back')[$index])) {
+                $backFile = $request->file('id_back')[$index];
+                $backFileName = "{$safeType}_back_{$timestamp}_{$index}."
+                    . $backFile->getClientOriginalExtension();
+
+                $backFile->move($publicBasePath, $backFileName);
+
+                $backRelativePath = "uploads/workers/{$worker->id}/{$backFileName}";
+            }
+
+            /* -------- Collect data -------- */
+            $idTypes[]    = $type;
+            $idNumbers[]  = $request->id_number[$index];
+            $frontPaths[] = $frontRelativePath;
+            $backPaths[]  = $backRelativePath;
+        }
+
+        /* ------------------------------------
+        Update worker
+        ------------------------------------- */
         $worker->update([
-            'id_type'        => $idTypes,
-            'id_number'      => $idNumbers,
-            'id_front_path'  => $frontPaths,
-            'id_back_path'   => $backPaths,
-            'kyc_status'     => 'pending',
+            'id_type'       => $idTypes,
+            'id_number'     => $idNumbers,
+            'id_front_path' => $frontPaths,
+            'id_back_path'  => $backPaths,
+            'kyc_status'    => 'pending',
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'KYC documents updated successfully',
-            'count'   => count($idTypes),
+            'message' => 'KYC documents uploaded successfully',
+            'documents_count' => count($idTypes),
         ]);
+    }
+
+    private function normalizeIds($value): array
+    {
+        if (empty($value)) {
+            return [];
+        }
+        
+        if (is_string($value)) {
+            $value = json_decode($value, true);
+        }
+
+        if (is_array($value) && isset($value[0]) && is_array($value[0])) {
+            $value = $value[0];
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        // 🔥 FORCE INTEGER + REMOVE EMPTY
+        return array_values(
+            array_filter(
+                array_map('intval', $value)
+            )
+        );
     }
 }

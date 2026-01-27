@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Worker;
 use App\Models\WorkerAvailability;
+use App\Models\Service;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class WorkerAuthController extends Controller
 {
@@ -16,159 +19,235 @@ class WorkerAuthController extends Controller
      */
     public function register(Request $request)
     {
-        
         $request->validate([
             'name'     => 'required|string',
             'email'    => 'nullable|email|unique:users,email',
             'phone'    => 'required|string|unique:users,phone',
             'password' => 'required|min:6',
-            'category_id' => 'nullable|exists:service_categories,id',
-            'service_id' => 'nullable|exists:services,id',
+
+            'category_ids'   => 'required|array|min:1',
+            'category_ids.*' => 'exists:service_categories,id',
+
+            'service_ids'   => 'required|array|min:1',
+            'service_ids.*' => 'exists:services,id',
+
             'city_id' => 'nullable|exists:cities,id',
             'zone_id' => 'nullable|exists:zones,id',
             'area_id' => 'nullable|exists:serviceable_areas,id',
-            
-            'available_dates' => 'required|array|min:1',
+
+            'available_dates'   => 'required|array|min:1',
             'available_dates.*' => 'date',
 
-            'available_times' => 'required|array|min:1',
-            'available_times.*.start' => 'required|date_format:H:i',
-            'available_times.*.end'   => 'required|date_format:H:i',
-        ]);
-        
-        $user = User::create([
-            'name'      => $request->name,
-            'email'     => $request->email,
-            'phone'     => $request->phone,
-            'password'  => Hash::make($request->password),
-            'role'      => 'worker',
-            'category_id' => $request->category_id,
-            'service_id' => $request->service_id,
-            'city_id' => $request->city_id,
-            'zone_id' => $request->zone_id,
-            'area_id' => $request->area_id,
-            'is_active' => true,
+            'available_times'        => 'required|array|min:1',
+            'available_times.*.start'=> 'required|date_format:H:i',
+            'available_times.*.end'  => 'required|date_format:H:i',
         ]);
 
-        $worker = Worker::create([
-            'user_id'    => $user->id,
-            'kyc_status' => 'pending',
-        ]);
+        /* --------------------------------------------
+        VALIDATE SERVICE ↔ CATEGORY RELATION
+        --------------------------------------------- */
 
-        WorkerAvailability::create([
-            'worker_id'       => $worker->id,
-            'available_dates' => $request->available_dates,
-            'available_times' => $request->available_times,
-            'status'          => true
-        ]);
+        $invalidServices = Service::whereIn('id', $request->service_ids)
+            ->whereNotIn('category_id', $request->category_ids)
+            ->exists();
 
-        // ✅ GENERATE SANCTUM TOKEN
-        $token = $user->createToken('worker-token')->plainTextToken;
+        if ($invalidServices) {
+            throw ValidationException::withMessages([
+                'service_ids' => 'One or more services do not belong to selected categories'
+            ]);
+        }
 
-        return response()->json([
-            'success' => true,
-            'worker_id' => $worker->id,
-            'token' => $token,
-            'message' => 'Worker registered. Complete profile & KYC.'
-        ]);
+        DB::beginTransaction();
+
+        try {
+            /* --------------------------------------------
+            CREATE USER
+            --------------------------------------------- */
+
+            $user = User::create([
+                'name'         => $request->name,
+                'email'        => $request->email,
+                'phone'        => $request->phone,
+                'password'     => Hash::make($request->password),
+                'role'         => 'worker',
+                'category_ids' => $request->category_ids,
+                'service_ids'  => $request->service_ids,
+                'city_id'      => $request->city_id,
+                'zone_id'      => $request->zone_id,
+                'area_id'      => $request->area_id,
+                'is_active'    => true,
+            ]);
+            
+            /* --------------------------------------------
+            CREATE WORKER PROFILE
+            --------------------------------------------- */
+
+            $worker = Worker::create([
+                'user_id'    => $user->id,
+                'kyc_status' => 'pending',
+            ]);
+            
+            WorkerAvailability::create([
+                'worker_id'       => $worker->user_id,
+                'available_dates' => $request->available_dates,
+                'available_times' => $request->available_times,
+                'status'          => true,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success'   => true,
+                'worker_id' => $user->id,
+                'token'     => $user->createToken('worker-token')->plainTextToken,
+                'message'   => 'Worker registered successfully'
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
+
 
     public function update(Request $request, User $user = null)
     {
-        $request->validate([
-            'name'     => 'sometimes|required|string',
-            'email'    => 'sometimes|email|unique:users,email,'  . ($user?->id ?? auth()->id()), 
-            'phone'    => 'sometimes|required|string|unique:users,phone,' . ($user?->id ?? auth()->id()),
-            'password' => 'sometimes|nullable|min:6',
-
-            'category_id' => 'sometimes|nullable|exists:service_categories,id',
-            'service_id'  => 'sometimes|nullable|exists:services,id',
-            'city_id'     => 'sometimes|nullable|exists:cities,id',
-            'zone_id'     => 'sometimes|nullable|exists:zones,id',
-            'area_id'     => 'sometimes|nullable|exists:serviceable_areas,id',
-
-            'available_dates' => 'sometimes|required|array|min:1',
-            'available_dates.*' => 'date',
-
-            'available_times' => 'sometimes|required|array|min:1',
-            'available_times.*.start' => 'required_with:available_times|date_format:H:i',
-            'available_times.*.end'   => 'required_with:available_times|date_format:H:i',
-        ]);
-
-        /* ------------------------------------------------
-           WHO CAN UPDATE WHOM
-        ------------------------------------------------- */
-
+        /* --------------------------------------------
+        WHO CAN UPDATE
+        --------------------------------------------- */
         if (auth()->user()->role === 'admin') {
-            // Admin can update any worker user
             $user = $user ?? abort(404, 'Worker not found');
         } else {
-            // Worker can update only self
             $user = auth()->user();
         }
 
-        // Extra safety
         if ($user->role !== 'worker') {
             abort(403, 'Target user is not a worker');
         }
 
-        /* ------------------------------------------------
-           UPDATE USER (ONLY SENT FIELDS)
-        ------------------------------------------------- */
+        /* --------------------------------------------
+        VALIDATION
+        --------------------------------------------- */
+        $request->validate([
+            'name'     => 'sometimes|string',
+            'email'    => 'sometimes|email|unique:users,email,' . $user->id,
+            'phone'    => 'sometimes|string|unique:users,phone,' . $user->id,
+            'password' => 'sometimes|min:6',
 
-        $userData = [];
+            'category_ids'   => 'sometimes|array|min:1',
+            'category_ids.*' => 'exists:service_categories,id',
 
-        foreach ([
-            'name', 'phone', 'email',
-            'category_id', 'service_id',
-            'city_id', 'zone_id', 'area_id'
-        ] as $field) {
-            if ($request->has($field)) {
-                $userData[$field] = $request->$field;
+            'service_ids'   => 'sometimes|array|min:1',
+            'service_ids.*' => 'exists:services,id',
+
+            'city_id' => 'nullable|exists:cities,id',
+            'zone_id' => 'nullable|exists:zones,id',
+            'area_id' => 'nullable|exists:serviceable_areas,id',
+
+            'available_dates'   => 'sometimes|array|min:1',
+            'available_dates.*' => 'date',
+
+            'available_times'         => 'sometimes|array|min:1',
+            'available_times.*.start' => 'required_with:available_times|date_format:H:i',
+            'available_times.*.end'   => 'required_with:available_times|date_format:H:i',
+        ]);
+
+        /* --------------------------------------------
+        VALIDATE SERVICE ↔ CATEGORY (IF SENT)
+        --------------------------------------------- */
+        if ($request->has('service_ids')) {
+
+            $categoryIds = $request->category_ids ?? $user->category_ids;
+
+            $invalidServices = Service::whereIn('id', $request->service_ids)
+                ->whereNotIn('category_id', $categoryIds)
+                ->exists();
+
+            if ($invalidServices) {
+                throw ValidationException::withMessages([
+                    'service_ids' => 'One or more services do not belong to selected categories'
+                ]);
             }
         }
 
-        if ($request->filled('password')) {
-            $userData['password'] = Hash::make($request->password);
-        }
+        DB::beginTransaction();
 
-        if (!empty($userData)) {
-            $user->update($userData);
-        }
+        try {
+            /* --------------------------------------------
+            UPDATE USER
+            --------------------------------------------- */
+            $updateData = $request->only([
+                'name',
+                'email',
+                'phone',
+                'category_ids',
+                'service_ids',
+                'city_id',
+                'zone_id',
+                'area_id',
+            ]);
 
-        /* ------------------------------------------------
-           UPDATE AVAILABILITY (OPTIONAL)
-        ------------------------------------------------- */
-
-        if ($request->has('available_dates') || $request->has('available_times')) {
-
-            $availabilityData = [];
-
-            if ($request->has('available_dates')) {
-                $availabilityData['available_dates'] = $request->available_dates;
+            if ($request->filled('password')) {
+                $updateData['password'] = Hash::make($request->password);
             }
 
-            if ($request->has('available_times')) {
-                $availabilityData['available_times'] = $request->available_times;
+            $user->update($updateData);
+
+            /* --------------------------------------------
+            UPDATE AVAILABILITY (OPTIONAL)
+            --------------------------------------------- */
+            if ($request->has('available_dates') || $request->has('available_times')) {
+
+                WorkerAvailability::updateOrCreate(
+                    ['worker_id' => $user->worker->id],
+                    [
+                        'available_dates' => $request->available_dates ?? $user->availability?->available_dates,
+                        'available_times' => $request->available_times ?? $user->availability?->available_times,
+                        'status' => true,
+                    ]
+                );
             }
 
-            $availabilityData['status'] = true;
+            DB::commit();
 
-            WorkerAvailability::updateOrCreate(
-                ['worker_id' => $user->id],   // IMPORTANT
-                $availabilityData
-            );
+            return response()->json([
+                'success' => true,
+                'message' => 'Worker updated successfully',
+                'data' => $user->fresh()
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
+    }
+
+    public function destroy(User $user)
+    {
+        if (
+            auth()->user()->role !== 'admin' &&
+            auth()->id() !== $user->id
+        ) {
+            abort(403, 'Unauthorized');
+        }
+
+        if ($user->role !== 'worker') {
+            abort(403, 'Target user is not a worker');
+        }
+
+        $user->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Worker updated successfully',
-            'data' => [
-                'worker_id' => $user->id,
-                'user' => $user->fresh(),
-                'availability' => $user->availability
-            ]
+            'message' => 'Worker deleted successfully'
         ]);
     }
-
 }

@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminBookingController;
 use App\Http\Controllers\Admin\AdminUserController;
-use App\Http\Controllers\Admin\AdminWorkerController;
+use App\Http\Controllers\Api\Admin\AdminWorkerController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\ExtraTimeFeeController;
 use App\Http\Controllers\Admin\ServiceCategoryController;
@@ -20,8 +20,8 @@ use App\Http\Controllers\Location\CityController;
 use App\Http\Controllers\Location\ServiceableAreaController;
 use App\Http\Controllers\Location\ZoneController;
 use App\Http\Controllers\Webhooks\WhatsappBookingWebhookController;
-use App\Http\Controllers\Worker\WorkerAuthController;
-use App\Http\Controllers\Worker\WorkerProfileController;
+use App\Http\Controllers\Api\Worker\WorkerAuthController;
+use App\Http\Controllers\Api\Worker\WorkerProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Booking\BookingApprovalController;
@@ -41,6 +41,7 @@ Route::prefix('bot')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::post('/worker/register', [WorkerAuthController::class, 'register']);
+
 
 Route::middleware(['auth:sanctum', 'role:worker'])->group(function () {
     Route::get('/worker/me', [WorkerProfileController::class, 'me']);
@@ -124,6 +125,7 @@ Route::middleware([
 
 
     Route::put('/worker/{user?}/update',[WorkerAuthController::class, 'update']);
+    Route::delete('/worker/{user}', [WorkerAuthController::class, 'destroy']);
 
 });
 

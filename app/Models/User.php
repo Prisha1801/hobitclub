@@ -17,8 +17,8 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'category_id',
-        'service_id',
+        'category_ids',
+        'service_ids',
         'city_id',
         'zone_id',
         'area_id',
@@ -32,6 +32,8 @@ class User extends Authenticatable
 
     protected $casts = [
         'is_assigned' => 'boolean',
+        'category_ids' => 'array',
+        'service_ids'  => 'array',
     ];
 
     // WORKER RELATION

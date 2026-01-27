@@ -11,6 +11,40 @@ use Illuminate\Support\Str;
 
 class BookingController extends Controller
 {
+    
+    public function index(Request $request)
+    {
+        $bookings = Booking::with(['service.category', 'customer'])
+            ->latest()
+            ->get();
+            // ->map(function ($booking) {
+            //     return [
+            //         'id'             => $booking->id,
+            //         'customer'       => [
+            //             'id'    => $booking->customer->id,
+            //             'name'  => $booking->customer->name,
+            //             'phone' => $booking->customer->phone,
+            //         ],
+            //         'service'        => $booking->service->name,
+            //         'category'       => $booking->service->category->name ?? null,
+            //         'amount'         => $booking->amount,
+            //         'booking_date'   => $booking->booking_date,
+            //         'time_slot'      => $booking->time_slot,
+            //         'status'         => $booking->status,
+            //         'payment_status' => $booking->payment_status,
+            //         'address'        => $booking->address,
+            //         'source'         => $booking->source,
+            //         'created_at'     => $booking->created_at->toDateTimeString(),
+            //     ];
+            // });
+    
+        return response()->json([
+            'success' => true,
+            'count'   => $bookings->count(),
+            'data'    => $bookings,
+        ]);
+    }
+
     /**
      * List Services (Bot / CRM)
      */
@@ -125,6 +159,7 @@ class BookingController extends Controller
             '09:00 AM - 10:00 AM',
             '10:00 AM - 11:00 AM',
             '11:00 AM - 12:00 PM',
+            '12:00 AM - 01:00 PM',
             '01:00 PM - 02:00 PM',
             '02:00 PM - 03:00 PM',
             '03:00 PM - 04:00 PM',
@@ -213,9 +248,13 @@ class BookingController extends Controller
     public function show($id)
     {
         $booking = Booking::with('service.category')->findOrFail($id);
-
+        // print_r($booking);die;
         return response()->json([
             'id'             => $booking->id,
+            'customer_id'      => $booking->customer_id,
+            'worker_id'      => $booking->worker_id,
+            'assigned_by'      => $booking->assigned_by,
+            'service_id'        => $booking->service_id,
             'service'        => $booking->service->name,
             'category'       => $booking->service->category->name ?? null,
             'amount'         => $booking->amount,
