@@ -19,17 +19,7 @@ class RegisterController extends Controller
             'phone'    => 'required|string|max:15|unique:users,phone',
             'email'    => 'nullable|email|unique:users,email',
             'password' => 'required|min:6|confirmed',
-            'role'     => [
-                'required',
-                Rule::in([
-                    'admin',
-                    'coordinator',
-                    'operation_head',
-                    'worker',
-                    'customer',
-                    'staff'
-                ])
-            ],
+            'role_id' => 'required|exists:roles,id',
         ]);
 
         $user = User::create([
@@ -37,21 +27,16 @@ class RegisterController extends Controller
             'phone'     => $request->phone,
             'email'     => $request->email,
             'password'  => Hash::make($request->password),
-            'role'      => $request->role,
+            'role_id'   => $request->role_id,
             'is_active' => true
         ]);
 
-        // Auto create role-specific profile
-        if ($user->role === 'worker') {
-            Worker::create([
-                'user_id' => $user->id
-            ]);
+        if ($user->hasRole('worker')) {
+            Worker::create(['user_id' => $user->id]);
         }
 
-        if ($user->role === 'customer') {
-            Customer::create([
-                'user_id' => $user->id
-            ]);
+        if ($user->hasRole('customer')) {
+            Customer::create(['user_id' => $user->id]);
         }
 
         return response()->json([

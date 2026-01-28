@@ -16,7 +16,7 @@ class User extends Authenticatable
         'phone',
         'email',
         'password',
-        'role',
+        'role_id',
         'category_ids',
         'service_ids',
         'city_id',
@@ -92,5 +92,15 @@ class User extends Authenticatable
     {
         return $this->role
             && $this->role->permissions->contains('slug', $permission);
+    }
+
+    public function hasRole(string $slug): bool
+    {
+        return $this->role && $this->role->slug === $slug;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin') || $this->hasRole('super_admin');
     }
 }
