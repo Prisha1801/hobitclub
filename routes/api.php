@@ -116,7 +116,8 @@ Route::middleware([
     Route::middleware('role:super-admin')->group(function () {
         Route::get('admins', [AdminUserController::class, 'index']);
         Route::post('admins', [AdminUserController::class, 'store']);
-        Route::delete('admins/{id}', [AdminUserController::class, 'destroy']);
+        //Route::delete('admins/{id}', [AdminUserController::class, 'destroy']);
+        Route::delete('/users/{user}', [AdminUserController::class, 'destroy']);
     });
 
     //Services
