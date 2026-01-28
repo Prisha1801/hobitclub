@@ -25,6 +25,11 @@ use App\Http\Controllers\Api\Worker\WorkerProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Booking\BookingApprovalController;
+use App\Http\Controllers\Rating\RatingAndReviewController;
+use App\Http\Controllers\Roles\RoleController;
+use App\Http\Controllers\Roles\RolePermissionController;
+use App\Http\Controllers\Permission\PermissionController;
+
 
 Route::prefix('bot')->group(function () {
     Route::get('/services', [BookingController::class, 'services']);
@@ -42,6 +47,16 @@ Route::prefix('bot')->group(function () {
 */
 Route::post('/worker/register', [WorkerAuthController::class, 'register']);
 
+//Roles and permissions
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::post('/roles', [RoleController::class, 'store']);
+
+    Route::get('/permissions', [PermissionController::class, 'index']);
+
+    Route::get('/roles/{role}/permissions', [RolePermissionController::class, 'edit']);
+    Route::post('/roles/{role}/permissions', [RolePermissionController::class, 'update']);
+});
 
 Route::middleware(['auth:sanctum', 'role:worker'])->group(function () {
     Route::get('/worker/me', [WorkerProfileController::class, 'me']);
@@ -127,15 +142,25 @@ Route::middleware([
     Route::put('/worker/{user?}/update',[WorkerAuthController::class, 'update']);
     Route::delete('/worker/{user}', [WorkerAuthController::class, 'destroy']);
 
+    //Verify Rating
+    Route::patch('ratings/{id}/verify', [RatingAndReviewController::class, 'verify']);
+
 });
 
 //Booking Ratings
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/booking-ratings', [BookingRatingController::class, 'store']);
-
     //Dashboard
     Route::get('/overview', [DashBoardController::class, 'overview']);
 
     //uploade kyc
     Route::post('/worker/{user?}/docs',[WorkerProfileController::class, 'uploaddocs']);
+
+    //Ratings and reviews
+    Route::post('/ratings', [BookingRatingController::class, 'store']);
+    Route::get('/ratings/booking/{bookingId}', [BookingRatingController::class, 'show']);
+    Route::get('/ratings/my', [BookingRatingController::class, 'myRatings']);
+    Route::put('/ratings/{id}', [BookingRatingController::class, 'update']);
+    Route::delete('/ratings/{id}', [BookingRatingController::class, 'destroy']);
+
+    Route::get('/workers/{workerId}/ratings', [BookingRatingController::class, 'workerRatings']);    
 });
