@@ -110,7 +110,7 @@ class WorkerAuthController extends Controller
      */
     public function update(Request $request, User $user = null)
     {
-        if (auth()->user()->isAdmin()) {
+        if (auth()->user()->hasRole('super-admin') || auth()->user()->hasRole('co-ordinators') || auth()->user()->hasRole('operation-head')) {
             $user = $user ?? abort(404, 'Worker not found');
         } else {
             $user = auth()->user();
@@ -163,10 +163,10 @@ class WorkerAuthController extends Controller
                     'password' => Hash::make($request->password)
                 ]);
             }
-
+            
             if ($request->has('available_dates') || $request->has('available_times')) {
                 WorkerAvailability::updateOrCreate(
-                    ['worker_id' => $user->worker->id],
+                    ['worker_id' => $user->id],
                     [
                         'available_dates' => $request->available_dates,
                         'available_times' => $request->available_times,
@@ -198,7 +198,8 @@ class WorkerAuthController extends Controller
      */
     public function destroy(User $user)
     {
-        if (!auth()->user()->isAdmin() && auth()->id() !== $user->id) {
+        if (!auth()->user()->hasRole('super-admin') && auth()->id() !== $user->id) {
+        //if (!auth()->user()->isAdmin() && auth()->id() !== $user->id) {
             abort(403, 'Unauthorized');
         }
 

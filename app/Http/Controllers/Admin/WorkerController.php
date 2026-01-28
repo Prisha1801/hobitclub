@@ -28,7 +28,8 @@ class WorkerController extends Controller
 
     public function index()
     {
-        $users = User::where('role', 'worker')
+        $workerRoleId = \App\Models\Role::where('slug', 'workers')->value('id');
+        $users = User::where('role_id', $workerRoleId)
             ->with([
                 'worker',
                 'worker_availablillity',
@@ -144,8 +145,9 @@ class WorkerController extends Controller
     }
 
     public function unassigned_worker()
-    {
-        return User::where('role', 'worker')
+    {   
+        $workerRoleId = \App\Models\Role::where('slug', 'workers')->value('id');
+        return User::where('role_id', $workerRoleId)
             ->with('worker',
                 'worker_availablillity',
                 'category:id,name',

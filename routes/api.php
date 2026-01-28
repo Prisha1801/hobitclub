@@ -73,11 +73,6 @@ Route::middleware(['auth:sanctum', 'role:workers'])->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'role:super-admin'])->group(function () {
-    Route::post('/admin/workers/{worker}/approve-kyc', [AdminWorkerController::class, 'approveKyc']);
-    Route::post('/admin/workers/{worker}/reject-kyc', [AdminWorkerController::class, 'rejectKyc']);
-});
-
-Route::middleware(['auth:sanctum', 'role:super-admin'])->group(function () {
     Route::post('/admin/bookings/{booking}/approve-payment', [AdminBookingController::class, 'approvePayment']);
     Route::post('/admin/bookings/{booking}/reject-payment', [AdminBookingController::class, 'rejectPayment']);
 });
@@ -97,6 +92,9 @@ Route::middleware([
     'role:super-admin,co-ordinators,operation-head',
 ])->prefix('admin')->group(function () {
 
+    //all user api
+    Route::get('/users', [AdminUserController::class, 'users']);
+
     // WORKERS
     Route::get('workers', [WorkerController::class, 'index']);
     Route::get('unassigned_worker', [WorkerController::class, 'unassigned_worker']);
@@ -104,6 +102,9 @@ Route::middleware([
     Route::get('workers/{id}', [WorkerController::class, 'show']);
     Route::patch('workers/{id}/status', [WorkerController::class, 'updateStatus']);
     Route::delete('workers/{id}', [WorkerController::class, 'destroy']);
+
+    Route::post('/admin/workers/{user}/approve-kyc', [AdminWorkerController::class, 'approveKyc']);
+    Route::post('/admin/workers/{user}/reject-kyc', [AdminWorkerController::class, 'rejectKyc']);
 
     // CUSTOMERS
     Route::get('customers', [CustomerController::class, 'index']);

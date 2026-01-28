@@ -257,7 +257,7 @@ class WorkerProfileController extends Controller
         /* ------------------------------------
         Resolve worker (admin / worker)
         ------------------------------------- */
-        if (auth()->user()->isAdmin()) {
+        if (auth()->user()->hasRole('super-admin') || auth()->user()->hasRole('co-ordinators') || auth()->user()->hasRole('operation-head')) {
             $worker = $user?->worker;
         } else {
             $worker = auth()->user()->worker;
