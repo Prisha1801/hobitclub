@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\User;
 
 class AdminUserController extends Controller
 {
     public function index()
     {
-        return User::where('role', 'admin')->latest()->get();
+        $adminRoleId = \App\Models\Role::where('slug', 'super-admin')->value('id');
+        return User::where('role_id', $adminRoleId)->latest()->get();
     }
 
     public function store(Request $request)
@@ -28,5 +30,10 @@ class AdminUserController extends Controller
         ]);
 
         return response()->json(['message' => 'Admin created']);
+    }
+
+    public function users()
+    {
+        return User::with('role')->get();
     }
 }

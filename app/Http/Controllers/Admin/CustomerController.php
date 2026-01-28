@@ -9,7 +9,9 @@ class CustomerController extends Controller
 {
     public function index()
     {
-        return User::where('role', 'customer')
+        $customerRoleId = \App\Models\Role::where('slug', 'customers')->value('id');
+        
+        return User::where('role_id', $customerRoleId)
             ->with('customer')
             ->latest()
             ->paginate(20);
