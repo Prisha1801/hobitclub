@@ -78,4 +78,19 @@ class User extends Authenticatable
         return $this->hasMany(WorkerAvailability::class, 'worker_id');
     }
     
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function permissions()
+    {
+        return $this->role?->permissions();
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        return $this->role
+            && $this->role->permissions->contains('slug', $permission);
+    }
 }
