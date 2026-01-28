@@ -36,4 +36,24 @@ class AdminUserController extends Controller
     {
         return User::with('role')->get();
     }
+
+    public function destroy(User $user)
+    {
+        // Allow only super-admin
+        if (!auth()->user()->hasRole('super-admin')) {
+            abort(403, 'Only super-admin can delete admin users');
+        }
+        $adminRoleId = \App\Models\Role::where('slug', 'super-admin')->value('id');
+        // Prevent deleting super-admin itself
+        if ($user->role_id === $adminRoleId) {
+            abort(403, 'Super-admin cannot be deleted');
+        }
+
+        $user->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Admin deleted successfully'
+        ]);
+    }
 }
