@@ -58,7 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/roles/{role}/permissions', [RolePermissionController::class, 'update']);
 });
 
-Route::middleware(['auth:sanctum', 'role:worker'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:workers'])->group(function () {
     Route::get('/worker/me', [WorkerProfileController::class, 'me']);
     Route::post('/worker/profile/update', [WorkerProfileController::class, 'update']);
     Route::post('/worker/kyc/upload', [WorkerProfileController::class, 'uploadKyc']);
@@ -69,12 +69,12 @@ Route::middleware(['auth:sanctum', 'role:worker'])->group(function () {
 | Admin APIs
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:super-admin'])->group(function () {
     Route::post('/admin/workers/{worker}/approve-kyc', [AdminWorkerController::class, 'approveKyc']);
     Route::post('/admin/workers/{worker}/reject-kyc', [AdminWorkerController::class, 'rejectKyc']);
 });
 
-Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:super-admin'])->group(function () {
     Route::post('/admin/bookings/{booking}/approve-payment', [AdminBookingController::class, 'approvePayment']);
     Route::post('/admin/bookings/{booking}/reject-payment', [AdminBookingController::class, 'rejectPayment']);
 });
@@ -91,7 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 Route::middleware([
     'auth:sanctum',
-    'role:admin,coordinator,operation_head',
+    'role:super-admin,co-ordinators,operation-head',
 ])->prefix('admin')->group(function () {
 
     // WORKERS
@@ -109,7 +109,7 @@ Route::middleware([
     Route::delete('customers/{id}', [CustomerController::class, 'destroy']);
 
     // ADMIN USERS (ONLY ADMIN SHOULD MANAGE ADMINS)
-    Route::middleware('role:admin')->group(function () {
+    Route::middleware('role:super-admin')->group(function () {
         Route::get('admins', [AdminUserController::class, 'index']);
         Route::post('admins', [AdminUserController::class, 'store']);
         Route::delete('admins/{id}', [AdminUserController::class, 'destroy']);
@@ -152,9 +152,6 @@ Route::middleware('auth:sanctum')->group(function () {
     //Dashboard
     Route::get('/overview', [DashBoardController::class, 'overview']);
 
-    //uploade kyc
-    Route::post('/worker/{user?}/docs',[WorkerProfileController::class, 'uploaddocs']);
-
     //Ratings and reviews
     Route::post('/ratings', [BookingRatingController::class, 'store']);
     Route::get('/ratings/booking/{bookingId}', [BookingRatingController::class, 'show']);
@@ -163,4 +160,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/ratings/{id}', [BookingRatingController::class, 'destroy']);
 
     Route::get('/workers/{workerId}/ratings', [BookingRatingController::class, 'workerRatings']);    
+});
+
+Route::middleware([
+    'auth:sanctum',
+    'role:super-admin,co-ordinators,operation-head,workers',
+])->group(function () {
+    //uploade kyc
+    Route::post('/worker/{user?}/docs',[WorkerProfileController::class, 'uploaddocs']);
 });

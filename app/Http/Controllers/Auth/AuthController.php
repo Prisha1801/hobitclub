@@ -15,17 +15,19 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'login'    => 'required|string', 
+            'login'    => 'required|string',
             'password' => 'required|string',
         ]);
 
         $login = $request->login;
 
-        // Detect email or phone
-        $user = User::where(function ($query) use ($login) {
-            $query->where('email', $login)
-                  ->orWhere('phone', $login);
-        })->first();
+        // Email or phone login
+        $user = User::with('role.permissions')
+            ->where(function ($query) use ($login) {
+                $query->where('email', $login)
+                    ->orWhere('phone', $login);
+            })
+            ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -42,10 +44,9 @@ class AuthController extends Controller
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Login successful',
-            'token'   => $token,
-            'role'    => $user->role,
-            'user'    => $user
+            'message'     => 'Login successful',
+            'token'       => $token,
+            'user'        => $user
         ]);
     }
 

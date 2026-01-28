@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Worker;
 use App\Models\WorkerAvailability;
 use App\Models\Service;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 class WorkerAuthController extends Controller
 {
     /**
-     * Create worker account and generate token
+     * REGISTER WORKER
      */
     public function register(Request $request)
     {
@@ -38,15 +39,12 @@ class WorkerAuthController extends Controller
             'available_dates'   => 'required|array|min:1',
             'available_dates.*' => 'date',
 
-            'available_times'        => 'required|array|min:1',
-            'available_times.*.start'=> 'required|date_format:H:i',
-            'available_times.*.end'  => 'required|date_format:H:i',
+            'available_times'         => 'required|array|min:1',
+            'available_times.*.start' => 'required|date_format:H:i',
+            'available_times.*.end'   => 'required|date_format:H:i',
         ]);
 
-        /* --------------------------------------------
-        VALIDATE SERVICE ↔ CATEGORY RELATION
-        --------------------------------------------- */
-
+        // Validate service-category relation
         $invalidServices = Service::whereIn('id', $request->service_ids)
             ->whereNotIn('category_id', $request->category_ids)
             ->exists();
@@ -60,16 +58,14 @@ class WorkerAuthController extends Controller
         DB::beginTransaction();
 
         try {
-            /* --------------------------------------------
-            CREATE USER
-            --------------------------------------------- */
+            $workerRoleId = Role::where('slug', 'workers')->value('id');
 
             $user = User::create([
                 'name'         => $request->name,
                 'email'        => $request->email,
                 'phone'        => $request->phone,
                 'password'     => Hash::make($request->password),
-                'role'         => 'worker',
+                'role_id'      => $workerRoleId,
                 'category_ids' => $request->category_ids,
                 'service_ids'  => $request->service_ids,
                 'city_id'      => $request->city_id,
@@ -77,16 +73,12 @@ class WorkerAuthController extends Controller
                 'area_id'      => $request->area_id,
                 'is_active'    => true,
             ]);
-            
-            /* --------------------------------------------
-            CREATE WORKER PROFILE
-            --------------------------------------------- */
 
             $worker = Worker::create([
                 'user_id'    => $user->id,
                 'kyc_status' => 'pending',
             ]);
-            
+
             WorkerAvailability::create([
                 'worker_id'       => $worker->user_id,
                 'available_dates' => $request->available_dates,
@@ -98,7 +90,7 @@ class WorkerAuthController extends Controller
 
             return response()->json([
                 'success'   => true,
-                'worker_id' => $user->id,
+                'worker_id' => $worker->id,
                 'token'     => $user->createToken('worker-token')->plainTextToken,
                 'message'   => 'Worker registered successfully'
             ], 201);
@@ -113,25 +105,21 @@ class WorkerAuthController extends Controller
         }
     }
 
-
+    /**
+     * UPDATE WORKER
+     */
     public function update(Request $request, User $user = null)
     {
-        /* --------------------------------------------
-        WHO CAN UPDATE
-        --------------------------------------------- */
-        if (auth()->user()->role === 'admin') {
+        if (auth()->user()->isAdmin()) {
             $user = $user ?? abort(404, 'Worker not found');
         } else {
             $user = auth()->user();
         }
 
-        if ($user->role !== 'worker') {
+        if (!$user->hasRole('workers')) {
             abort(403, 'Target user is not a worker');
         }
 
-        /* --------------------------------------------
-        VALIDATION
-        --------------------------------------------- */
         $request->validate([
             'name'     => 'sometimes|string',
             'email'    => 'sometimes|email|unique:users,email,' . $user->id,
@@ -156,31 +144,10 @@ class WorkerAuthController extends Controller
             'available_times.*.end'   => 'required_with:available_times|date_format:H:i',
         ]);
 
-        /* --------------------------------------------
-        VALIDATE SERVICE ↔ CATEGORY (IF SENT)
-        --------------------------------------------- */
-        if ($request->has('service_ids')) {
-
-            $categoryIds = $request->category_ids ?? $user->category_ids;
-
-            $invalidServices = Service::whereIn('id', $request->service_ids)
-                ->whereNotIn('category_id', $categoryIds)
-                ->exists();
-
-            if ($invalidServices) {
-                throw ValidationException::withMessages([
-                    'service_ids' => 'One or more services do not belong to selected categories'
-                ]);
-            }
-        }
-
         DB::beginTransaction();
 
         try {
-            /* --------------------------------------------
-            UPDATE USER
-            --------------------------------------------- */
-            $updateData = $request->only([
+            $user->update($request->only([
                 'name',
                 'email',
                 'phone',
@@ -189,24 +156,20 @@ class WorkerAuthController extends Controller
                 'city_id',
                 'zone_id',
                 'area_id',
-            ]);
+            ]));
 
             if ($request->filled('password')) {
-                $updateData['password'] = Hash::make($request->password);
+                $user->update([
+                    'password' => Hash::make($request->password)
+                ]);
             }
 
-            $user->update($updateData);
-
-            /* --------------------------------------------
-            UPDATE AVAILABILITY (OPTIONAL)
-            --------------------------------------------- */
             if ($request->has('available_dates') || $request->has('available_times')) {
-
                 WorkerAvailability::updateOrCreate(
                     ['worker_id' => $user->worker->id],
                     [
-                        'available_dates' => $request->available_dates ?? $user->availability?->available_dates,
-                        'available_times' => $request->available_times ?? $user->availability?->available_times,
+                        'available_dates' => $request->available_dates,
+                        'available_times' => $request->available_times,
                         'status' => true,
                     ]
                 );
@@ -230,16 +193,16 @@ class WorkerAuthController extends Controller
         }
     }
 
+    /**
+     * DELETE WORKER
+     */
     public function destroy(User $user)
     {
-        if (
-            auth()->user()->role !== 'admin' &&
-            auth()->id() !== $user->id
-        ) {
+        if (!auth()->user()->isAdmin() && auth()->id() !== $user->id) {
             abort(403, 'Unauthorized');
         }
 
-        if ($user->role !== 'worker') {
+        if (!$user->hasRole('workers')) {
             abort(403, 'Target user is not a worker');
         }
 
