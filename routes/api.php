@@ -45,7 +45,7 @@ Route::prefix('bot')->group(function () {
 | Worker APIs
 |--------------------------------------------------------------------------
 */
-Route::post('/worker/register', [WorkerAuthController::class, 'register']);
+
 
 //Roles and permissions
 Route::middleware('auth:sanctum', 'role:super-admin')->group(function () {
@@ -61,7 +61,7 @@ Route::middleware('auth:sanctum', 'role:super-admin')->group(function () {
     Route::post('/roles/{role}/permissions', [RolePermissionController::class, 'update']);
 });
 
-Route::middleware(['auth:sanctum', 'role:workers'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:workers,contractors,super-admin'])->group(function () {
     Route::get('/worker/me', [WorkerProfileController::class, 'me']);
     Route::post('/worker/profile/update', [WorkerProfileController::class, 'update']);
     Route::post('/worker/kyc/upload', [WorkerProfileController::class, 'uploadKyc']);
@@ -84,12 +84,13 @@ Route::post('/webhooks/whatsapp/booking', [WhatsappBookingWebhookController::cla
     ->middleware('throttle:30,1');
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/worker/register', [WorkerAuthController::class, 'register']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
 });
 Route::middleware([
     'auth:sanctum',
-    'role:super-admin,co-ordinators,operation-head',
+    'role:super-admin,co-ordinators,operation-head,contractors,staff',
 ])->prefix('admin')->group(function () {
 
     //all user api
@@ -169,7 +170,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::middleware([
     'auth:sanctum',
-    'role:super-admin,co-ordinators,operation-head,workers',
+    'role:super-admin,co-ordinators,operation-head,workers,contractors,staff',
 ])->group(function () {
     //uploade kyc
     Route::post('/worker/{user?}/docs',[WorkerProfileController::class, 'uploaddocs']);

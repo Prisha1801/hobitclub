@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Helpers\RoleIdGenerator;
 
 class User extends Authenticatable
 {
@@ -22,6 +23,8 @@ class User extends Authenticatable
         'city_id',
         'zone_id',
         'area_id',
+        'added_by',
+        'public_id',
         'is_active',
         'is_assigned'
     ];
@@ -102,5 +105,24 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->hasRole('admin') || $this->hasRole('super_admin');
+    }
+
+    public function addedBy()
+    {
+        return $this->belongsTo(User::class, 'added_by');
+    }
+
+    public function addedUsers()
+    {
+        return $this->hasMany(User::class, 'added_by');
+    }
+
+    protected static function booted()
+    {
+        static::creating(function ($user) {
+            if (empty($user->public_id) && $user->role) {
+                $user->public_id = RoleIdGenerator::generate($user->role->slug);
+            }
+        });
     }
 }

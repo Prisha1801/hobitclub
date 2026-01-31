@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Helpers\RoleIdGenerator;
 
 class WorkerAuthController extends Controller
 {
@@ -59,19 +60,22 @@ class WorkerAuthController extends Controller
         DB::beginTransaction();
 
         try {
-            $workerRoleId = Role::where('slug', 'workers')->value('id');
-
+            $workerRole = Role::where('slug', 'workers')->firstOrFail();
+            $auth = auth()->user();
+            
             $user = User::create([
                 'name'         => $request->name,
                 'email'        => $request->email,
                 'phone'        => $request->phone,
                 'password'     => Hash::make($request->password),
-                'role_id'      => $workerRoleId,
+                'role_id'      => $workerRole->id,
                 'category_ids' => $request->category_ids,
                 'service_ids'  => $request->service_ids,
                 'city_id'      => $request->city_id,
                 'zone_id'      => $request->zone_id,
                 'area_id'      => $request->area_id,
+                'added_by'     => $auth->id,
+                //'public_id'    => RoleIdGenerator::generate($workerRoleId->slug),
                 'is_active'    => $request->input('is_active', 0),
             ]);
 
@@ -92,6 +96,7 @@ class WorkerAuthController extends Controller
             return response()->json([
                 'success'   => true,
                 'worker_id' => $worker->id,
+                'public_id' => $user->public_id,
                 'token'     => $user->createToken('worker-token')->plainTextToken,
                 'message'   => 'Worker registered successfully'
             ], 201);

@@ -7,92 +7,186 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Booking;
 use Carbon\Carbon;
-
+use DB;
 class DashBoardController extends Controller
 {
+    // public function overview(Request $request)
+    // {
+    //     $days = $request->get('days', 7);
+    //     $from = Carbon::now()->subDays($days);
+
+    //     return [
+    //         'Overview' => $this->data($from),
+    //         // 'revenue_chart' => $this->revenueChart($from),
+    //         // 'booking_stats' => $this->bookingStats($from),
+    //         // 'recent_transactions' => $this->recentTransactions()
+    //     ];        
+    // }
+
     public function overview(Request $request)
     {
-        $days = $request->get('days', 7);
-        $from = Carbon::now()->subDays($days);
+        $filter = $request->filter;
 
-        return [
-            'Overview' => $this->data($from),
-            // 'revenue_chart' => $this->revenueChart($from),
-            // 'booking_stats' => $this->bookingStats($from),
-            // 'recent_transactions' => $this->recentTransactions()
-        ];        
-    }
+        if ($request->filled(['from_date', 'to_date'])) {
+            $fromDate = Carbon::parse($request->from_date)->startOfDay();
+            $toDate   = Carbon::parse($request->to_date)->endOfDay();
+        } else {
+            switch ($filter) {
+                case 'day':
+                    $fromDate = Carbon::today();
+                    $toDate   = Carbon::today()->endOfDay();
+                    break;
 
-    private function data($from)
-    {
-        return [
-            'total_users' => [
-                'value' => User::count(),
-                'change' => $this->percentageChange(
-                    User::where('created_at', '>=', $from)->count(),
-                    User::whereBetween('created_at', [$from->copy()->subDays(7), $from])->count()
-                ). ' %'
+                case 'week':
+                    $fromDate = Carbon::now()->startOfWeek();
+                    $toDate   = Carbon::now()->endOfWeek();
+                    break;
+
+                case 'year':
+                    $fromDate = Carbon::now()->startOfYear();
+                    $toDate   = Carbon::now()->endOfYear();
+                    break;
+
+                case 'month':
+                default:
+                    $fromDate = Carbon::now()->startOfMonth();
+                    $toDate   = Carbon::now()->endOfMonth();
+                    break;
+            }
+        }
+
+        /* -------------------------
+        | PREVIOUS PERIOD
+        |-------------------------*/
+        $periodDays = $fromDate->diffInDays($toDate) + 1;
+
+        $previousFrom = (clone $fromDate)->subDays($periodDays);
+        $previousTo   = (clone $fromDate)->subSecond();
+
+        /* -------------------------
+        | USERS
+        |-------------------------*/
+        $currentUsers = User::where('is_active', 1)
+            ->whereBetween('created_at', [$fromDate, $toDate])
+            ->count();
+
+        $previousUsers = User::where('is_active', 1)
+            ->whereBetween('created_at', [$previousFrom, $previousTo])
+            ->count();
+
+        $userPercentage = $previousUsers > 0
+            ? round((($currentUsers - $previousUsers) / $previousUsers) * 100, 1)
+            : 100;
+
+        /* -------------------------
+        | BOOKINGS
+        |-------------------------*/
+        $currentBookings = Booking::whereBetween('created_at', [$fromDate, $toDate])->count();
+
+        $previousBookings = Booking::whereBetween('created_at', [$previousFrom, $previousTo])->count();
+
+        $bookingPercentage = $previousBookings > 0
+            ? round((($currentBookings - $previousBookings) / $previousBookings) * 100, 1)
+            : 100;
+
+        /* -------------------------
+        | REVENUE
+        |-------------------------*/
+        $currentRevenue = Booking::whereIn('status', ['completed', 'confirmed'])
+            ->where('payment_status', 'paid')
+            ->whereBetween('created_at', [$fromDate, $toDate])
+            ->sum('amount');
+
+        $previousRevenue = Booking::whereIn('status', ['completed', 'confirmed'])
+            ->where('payment_status', 'paid')
+            ->whereBetween('created_at', [$previousFrom, $previousTo])
+            ->sum('amount');
+
+        $revenuePercentage = $previousRevenue > 0
+            ? round((($currentRevenue - $previousRevenue) / $previousRevenue) * 100, 1)
+            : 100;
+        
+        /* -------------------------
+        | GROWTH RATE (Bookings %)
+        |-------------------------*/
+
+        // current period growth
+        $currentGrowth = $previousBookings > 0
+            ? round((($currentBookings - $previousBookings) / $previousBookings) * 100, 1)
+            : 0;
+
+        // previous period bookings (one more step back)
+        $prevPrevFrom = (clone $previousFrom)->subDays($periodDays);
+        $prevPrevTo   = (clone $previousFrom)->subSecond();
+
+        $prevPrevBookings = Booking::whereBetween('created_at', [$prevPrevFrom, $prevPrevTo])->count();
+
+        // previous period growth
+        $previousGrowth = $prevPrevBookings > 0
+            ? round((($previousBookings - $prevPrevBookings) / $prevPrevBookings) * 100, 1)
+            : 0;
+
+        // growth badge percentage (vs last month)
+        $growthPercentage = $previousGrowth != 0
+            ? round((($currentGrowth - $previousGrowth) / abs($previousGrowth)) * 100, 1)
+            : 100;
+            /* -------------------------
+        | REVENUE CHART
+        |-------------------------*/
+        
+        $revenueChart = Booking::select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('SUM(amount) as total')
+            )
+            ->whereIn('status', ['completed', 'confirmed'])
+            ->where('payment_status', 'paid')
+            ->whereBetween('created_at', [$fromDate, $toDate])
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        /* -------------------------
+        | BOOKING CHART
+        |-------------------------*/
+        $bookingChart = Booking::select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('COUNT(*) as total')
+            )
+            ->whereBetween('created_at', [$fromDate, $toDate])
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        return response()->json([
+            'filter_applied' => $filter ?? 'month',
+            'date_range' => [
+                'from' => $fromDate->toDateString(),
+                'to'   => $toDate->toDateString(),
             ],
-            // 'total_bookings' => [
-            //     'value' => Booking::count(),
-            //     'change' => $this->percentageChange(
-            //         Booking::where('created_at', '>=', $from)->count(),
-            //         Booking::whereBetween('created_at', [$from->copy()->subDays(7), $from])->count()
-            //     )
-            // ],
-            // 'total_revenue' => [
-            //     'value' => Transaction::sum('amount'),
-            //     'change' => $this->percentageChange(
-            //         Transaction::where('created_at', '>=', $from)->sum('amount'),
-            //         Transaction::whereBetween('created_at', [$from->copy()->subDays(7), $from])->sum('amount')
-            //     )
-            // ],
-            // 'growth_rate' => [
-            //     'value' => round(Booking::where('created_at', '>=', $from)->count() / max(Booking::count(),1) * 100, 2)
-            // ]
-        ];
-    }
-
-    // private function revenueChart($from)
-    // {
-    //     return Transaction::selectRaw('DATE(created_at) as date, SUM(amount) as total')
-    //         ->where('created_at', '>=', $from)
-    //         ->groupBy('date')
-    //         ->orderBy('date')
-    //         ->get();
-    // }
-
-    // private function bookingStats($from)
-    // {
-    //     return Booking::selectRaw('MONTH(created_at) as month, COUNT(*) as total')
-    //         ->where('created_at', '>=', $from)
-    //         ->groupBy('month')
-    //         ->orderBy('month')
-    //         ->get()
-    //         ->map(fn($row) => [
-    //             'month' => Carbon::create()->month($row->month)->format('M'),
-    //             'total' => $row->total
-    //         ]);
-    // }
-
-    // private function recentTransactions()
-    // {
-    //     return Transaction::with('user:id,name')
-    //         ->latest()
-    //         ->limit(5)
-    //         ->get([
-    //             'id',
-    //             'transaction_id',
-    //             'user_id',
-    //             'amount',
-    //             'status',
-    //             'created_at'
-    //         ]);
-    // }
-
-    private function percentageChange($current, $previous)
-    {
-        if ($previous == 0) return 100;
-        return round((($current - $previous) / $previous) * 100, 2);
+            'cards' => [
+                'users' => [
+                    'total' => $currentUsers,
+                    'percentage' => $userPercentage,
+                    'trend' => $userPercentage >= 0 ? 'up' : 'down',
+                ],
+                'bookings' => [
+                    'total' => $currentBookings,
+                    'percentage' => $bookingPercentage,
+                    'trend' => $bookingPercentage >= 0 ? 'up' : 'down',
+                ],
+                'revenue' => [
+                    'total' => $currentRevenue,
+                    'percentage' => $revenuePercentage,
+                    'trend' => $revenuePercentage >= 0 ? 'up' : 'down',
+                ],
+                'groth' => [
+                    'total' => $currentGrowth,
+                    'percentage' => $growthPercentage,
+                    'trend' => $growthPercentage >= 0 ? 'up' : 'down',
+                ],
+            ],
+            'revenue_chart' => $revenueChart,
+            'booking_chart' => $bookingChart,
+        ]);
     }
 }
