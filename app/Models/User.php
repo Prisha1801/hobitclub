@@ -23,6 +23,7 @@ class User extends Authenticatable
         'city_id',
         'zone_id',
         'area_id',
+        'refer_by',
         'added_by',
         'public_id',
         'is_active',

@@ -44,6 +44,7 @@ class WorkerAuthController extends Controller
             'available_times.*.start' => 'required|date_format:H:i',
             'available_times.*.end'   => 'required|date_format:H:i',
             'is_active' => 'sometimes|boolean',
+            'refer_by' => 'nullable|string',
         ]);
 
         // Validate service-category relation
@@ -75,6 +76,7 @@ class WorkerAuthController extends Controller
                 'zone_id'      => $request->zone_id,
                 'area_id'      => $request->area_id,
                 'added_by'     => $auth->id,
+                'refer_by'     => $request->refer_by,
                 //'public_id'    => RoleIdGenerator::generate($workerRoleId->slug),
                 'is_active'    => $request->input('is_active', 0),
             ]);
@@ -149,6 +151,7 @@ class WorkerAuthController extends Controller
             'available_times.*.start' => 'required_with:available_times|date_format:H:i',
             'available_times.*.end'   => 'required_with:available_times|date_format:H:i',
             'is_active' => 'sometimes|boolean',
+            'refer_by' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -164,6 +167,7 @@ class WorkerAuthController extends Controller
                 'zone_id',
                 'area_id',
                 'is_active',
+                'refer_by',
             ]));
 
             if ($request->filled('password')) {

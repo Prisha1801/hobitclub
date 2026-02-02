@@ -26,6 +26,7 @@ class Booking extends Model
         'payment_ref',
         'paid_at',
         'assigned_by',
+        'is_seen',
     ];
 
     public function service()

@@ -14,6 +14,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Booking\BookingAssignmentController;
 use App\Http\Controllers\Booking\BookingRatingController;
 use App\Http\Controllers\Commission\CommissionController;
+use App\Http\Controllers\Commission\CommissionCalculationController;
 use App\Http\Controllers\Dashboard\DashBoardController;
 use App\Http\Controllers\LiveTracking\LiveTrackingController;
 use App\Http\Controllers\Location\CityController;
@@ -29,7 +30,10 @@ use App\Http\Controllers\Rating\RatingAndReviewController;
 use App\Http\Controllers\Roles\RoleController;
 use App\Http\Controllers\Roles\RolePermissionController;
 use App\Http\Controllers\Permission\PermissionController;
-
+use App\Http\Controllers\Survey\ResidentSurveyController;
+use App\Http\Controllers\Survey\MaidSurveyController;
+use App\Http\Controllers\Time\GetTimeController;
+use App\Http\Controllers\Notification\NotificationController;
 
 Route::prefix('bot')->group(function () {
     Route::get('/services', [BookingController::class, 'services']);
@@ -75,6 +79,8 @@ Route::middleware(['auth:sanctum', 'role:workers,contractors,super-admin'])->gro
 Route::middleware(['auth:sanctum', 'role:super-admin'])->group(function () {
     Route::post('/admin/bookings/{booking}/approve-payment', [AdminBookingController::class, 'approvePayment']);
     Route::post('/admin/bookings/{booking}/reject-payment', [AdminBookingController::class, 'rejectPayment']);
+    Route::get('/admin/commissions-calculation', [CommissionCalculationController::class, 'index']);
+
 });
 
 Route::post('/register', [RegisterController::class, 'register']);
@@ -166,6 +172,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/ratings/{id}', [BookingRatingController::class, 'destroy']);
 
     Route::get('/workers/{workerId}/ratings', [BookingRatingController::class, 'workerRatings']);    
+
+    Route::get('/notifications/count', [NotificationController::class, 'count']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
 });
 
 Route::middleware([
@@ -175,3 +184,13 @@ Route::middleware([
     //uploade kyc
     Route::post('/worker/{user?}/docs',[WorkerProfileController::class, 'uploaddocs']);
 });
+
+//survey form
+Route::post('/resident-surveys', [ResidentSurveyController::class, 'store']);
+Route::get('/resident-surveys', [ResidentSurveyController::class, 'index']);
+//maid survey form
+Route::post('/maid-survey', [MaidSurveyController::class, 'store']);
+Route::get('/maid-survey', [MaidSurveyController::class, 'index']);
+Route::get('/maid-survey/{id}', [MaidSurveyController::class, 'show']);
+
+Route::get('/time-slots', [GetTimeController::class, 'getAvailableSlots']);

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Booking;
 use App\Models\Worker;
 use App\Models\User;
+use App\Services\CommissionService;
 
 class BookingAssignmentController extends Controller
 {
@@ -48,7 +49,8 @@ class BookingAssignmentController extends Controller
 
         // OPTIONAL: notify worker (WhatsApp / push)
         // event(new BookingAssigned($booking));
-
+        CommissionService::calculate($booking);
+        
         return response()->json([
             'message' => 'Booking assigned successfully',
             'booking' => $booking->load('worker')

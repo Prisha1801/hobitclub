@@ -88,7 +88,7 @@ class WorkerController extends Controller
                 'id'          => $user->id,
                 'worker_id'   => $worker?->id,
                 'public_id'   => $user->public_id,
-
+                'refer_by' => $user->refer_by,
                 'added_by' => $user->addedBy ? [
                     'id'        => $user->addedBy->id,
                     'name'      => $user->addedBy->name,
@@ -112,7 +112,6 @@ class WorkerController extends Controller
                 'kyc_status'     => $worker?->kyc_status,
 
                 'documents' => $documents,
-
                 'worker_availablillity' => $user->worker_availablillity,
             ];
         });
